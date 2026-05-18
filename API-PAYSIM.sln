@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36301.6 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API-PAYSIM", "API-PAYSIM.csproj", "{A186848A-421A-41E2-84B5-2AFC531268EA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A186848A-421A-41E2-84B5-2AFC531268EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A186848A-421A-41E2-84B5-2AFC531268EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A186848A-421A-41E2-84B5-2AFC531268EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A186848A-421A-41E2-84B5-2AFC531268EA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F474F221-C0C3-4756-89CE-0E9EA58B8420}
+	EndGlobalSection
+EndGlobal
