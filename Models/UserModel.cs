@@ -10,4 +10,6 @@
         public DateTime? Birthday {  get; set; }
         public bool AccountOk { get; set; }
     }
+
+    
 }

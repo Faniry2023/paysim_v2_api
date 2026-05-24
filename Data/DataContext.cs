@@ -13,5 +13,6 @@ namespace API_PAYSIM.Data
         public DbSet<ProjectModel> Project { get; set; }
         public DbSet<UserModel> User { get; set; }
         public DbSet<UserTestKotlin> UserKotlin { get; set; }
+        public DbSet<HistoricalSmsModel> HistoricalSms { get; set; }
     }
 }

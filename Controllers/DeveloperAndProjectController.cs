@@ -21,6 +21,7 @@ namespace API_PAYSIM.Controllers
             this.dataContext = dataContext;
             this.jwtHelper = jwtHelper;
         }
+        [Authorize]
         [HttpPost("developer/new")]
         public async Task<IActionResult> NewDeveloper([FromBody] DeveloperHelper model)
         {
@@ -67,6 +68,7 @@ namespace API_PAYSIM.Controllers
             await dataContext.SaveChangesAsync();
             return Ok(newDeveloper);
         }
+        [Authorize]
         [HttpGet("developer/get")]
         public async Task<IActionResult> GetDeveloper()
         {
@@ -98,7 +100,7 @@ namespace API_PAYSIM.Controllers
             }
             return Ok(developer);
         }
-
+        [Authorize]
         [HttpPut("developer/update")]
         public async Task<IActionResult> UpdateDeveloper([FromBody]DeveloperHelper model)
         {

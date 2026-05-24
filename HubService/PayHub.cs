@@ -26,6 +26,7 @@ namespace API_PAYSIM.HubService
             _logger = logger;
             this.dataContext = dataContext;
         }
+
         public override async Task OnConnectedAsync()
         {
             var type = Context.GetHttpContext()?.Request.Query["type"].ToString();
@@ -50,6 +51,10 @@ namespace API_PAYSIM.HubService
             // Envoyer la liste des utilisateurs connectés à tous
             await base.OnConnectedAsync();
             
+        }
+        public async Task Ping()
+        {
+            await Clients.Caller.SendAsync("Pong");
         }
 
 
@@ -111,7 +116,7 @@ namespace API_PAYSIM.HubService
         }
         public async Task ActionPay(ActionPayObjectHelper actionPayObjectHelper)
         {
-            if (dataContext?.Historical is null || dataContext.User is null || dataContext.Payment is null)
+            if (dataContext?.Historical is null || dataContext.User is null || dataContext.Payment is null || dataContext.HistoricalSms is null)
             {
                 _logger.LogError("Le contexte de données est introuvable");
                 await Clients.Caller.SendAsync("ServerError", new
@@ -155,10 +160,21 @@ namespace API_PAYSIM.HubService
                 Reason = actionPayObjectHelper.continuationPaymentHelper.Reason,
                 Price = actionPayObjectHelper.sellerCheckHelper.Price,
                 NumberDeveloper = actionPayObjectHelper.continuationPaymentHelper.Number,
-                NumberCustomer = actionPayObjectHelper.continuationPaymentHelper.NumberCUstomer,
+                NumberCustomer = actionPayObjectHelper.sellerCheckHelper.BuyerNumber
             };
 
             await dataContext.Historical.AddAsync(newHistorical);
+
+            HistoricalSmsModel newSms = new()
+            {
+                Id_payement = actionPayObjectHelper.continuationPaymentHelper.IdPayment!.ToUpper(),
+                BuyerNumber = actionPayObjectHelper.sellerCheckHelper.BuyerNumber,
+                BuyerName = actionPayObjectHelper.sellerCheckHelper.BuyerName,
+                Reference = actionPayObjectHelper.sellerCheckHelper.Reference,
+                Price = actionPayObjectHelper.sellerCheckHelper.Price
+            };
+
+            await dataContext.HistoricalSms.AddAsync(newSms);
 
             await dataContext.SaveChangesAsync();
             // ENVOI DES BOOLÉENS TRUE À L'ENVOYEUR ET AU RECEVEUR
