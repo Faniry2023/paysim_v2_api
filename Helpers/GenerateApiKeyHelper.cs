@@ -38,24 +38,16 @@
         public static String GenerateReason()
         {
             Random random = new Random();
-            String? alphabet = "abcdefghijklmnopqrstuvwxyz";
             String result = string.Empty;
             for(int i = 1; i <= 20; i++)
             {
                 if(i == 5 || i == 10 || i == 15)
                 {
-                    result += "-";
+                    result += "0";
                 }
                 else
                 {
-                    int choice = random.Next(1, 4);
-                    result += choice switch
-                    {
-                        1 => alphabet[random.Next(0, alphabet.Length)],
-                        2 => alphabet[random.Next(0, alphabet.Length)].ToString().ToUpper(),
-                        3 => random.Next(0, 10),
-                        _ => "N/A"
-                    };
+                    result += random.Next(0, 10);
                 }
                 
             }

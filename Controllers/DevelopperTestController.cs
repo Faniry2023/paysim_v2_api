@@ -45,7 +45,7 @@ namespace API_PAYSIM.Controllers
             }
             return View();
         }
-        [HttpGet("calcul")]
+        [HttpGet("calcul/second")]
         public String CalculDelta(int a, int b, int c)
         {
             //ax²+bx+c=0

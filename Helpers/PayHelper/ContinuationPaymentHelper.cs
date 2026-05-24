@@ -10,6 +10,5 @@
         public String? Number {  get; set; }
         public decimal Price {  get; set; }
         public String? ActionKey {  get; set; }
-        public String? NumberCUstomer {  get; set; }
     }
 }
