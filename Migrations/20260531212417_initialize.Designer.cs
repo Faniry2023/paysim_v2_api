@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API_PAYSIM.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20260522091244_change payer")]
-    partial class changepayer
+    [Migration("20260531212417_initialize")]
+    partial class initialize
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -185,6 +185,9 @@ namespace API_PAYSIM.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ApiKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ApiKeyPrefix")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IdDeveloper")

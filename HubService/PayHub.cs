@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace API_PAYSIM.HubService
 {
-    [Authorize]
+    
     public class PayHub : Hub
     {
 
@@ -26,7 +26,34 @@ namespace API_PAYSIM.HubService
             _logger = logger;
             this.dataContext = dataContext;
         }
+        //connexion v2
 
+        public override async Task OnConnectedAsync()
+        {
+            var type = Context.GetHttpContext()?.Request.Query["type"].ToString();
+            var id = Context.GetHttpContext()!.Request.Query["payId"].ToString().ToUpper();
+            if(type == "project")
+            {
+                var payment = await dataContext.Payment.FirstOrDefaultAsync(p => p.IdPayment.ToString().ToUpper().Equals(id));
+                if(payment == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "problème de connexion entre le site et PaySim");
+                    return;
+                }
+                projectConnected[id] = Context.ConnectionId;
+            }
+            else
+            {
+                var userId = GetUserId().ToUpper();
+                userConnected[userId] = Context.ConnectionId;
+            }
+            // Envoyer la liste des utilisateurs connectés à tous
+            await base.OnConnectedAsync();
+            
+        }
+
+        //Coonexion v1
+        /*
         public override async Task OnConnectedAsync()
         {
             var type = Context.GetHttpContext()?.Request.Query["type"].ToString();
@@ -39,9 +66,7 @@ namespace API_PAYSIM.HubService
                     await Clients.Caller.SendAsync("Error", "problème de connexion entre le site et PaySim");
                     return;
                 }
-
                 projectConnected[id] = Context.ConnectionId;
-
             }
             else
             {
@@ -51,7 +76,7 @@ namespace API_PAYSIM.HubService
             // Envoyer la liste des utilisateurs connectés à tous
             await base.OnConnectedAsync();
             
-        }
+        }*/
         public async Task Ping()
         {
             await Clients.Caller.SendAsync("Pong");
@@ -192,9 +217,9 @@ namespace API_PAYSIM.HubService
 
             // ConnectionId du projet (receveur)
             
-            if (projectConnected.TryGetValue(actionPayObjectHelper.continuationPaymentHelper.IdProject!.ToUpper().ToString().ToUpper(), out string projectId))
+            if (projectConnected.TryGetValue(actionPayObjectHelper.continuationPaymentHelper!.IdPayment.ToUpper().ToString().ToUpper(), out string payId))
             {
-                projectConnectionId = projectId;
+                projectConnectionId = payId;
             }
 
             // 2. Envoyer le booléen true aux deux

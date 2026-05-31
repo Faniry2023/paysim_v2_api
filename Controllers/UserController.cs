@@ -19,7 +19,29 @@ namespace API_PAYSIM.Controllers
             this.dataContext = dataContext;
             this.jwtHelper = jwtHelper;
         }
+
+        /// <summary>
+        /// Creates a new user account
+        /// </summary>
+        /// <param name="model">
+        /// Complete user registration information including profile and credentials
+        /// </param>
+        /// <returns>
+        /// Returns true if the account has been successfully created
+        /// </returns>
+        /// <response code="200">
+        /// Account successfully created
+        /// </response>
+        /// <response code="400">
+        /// Invalid request, user is underage, or email already exists
+        /// </response>
+        /// <response code="500">
+        /// Internal server error
+        /// </response>
         [HttpPost("user/signin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> SignIn([FromBody] CompletUserHelper model)
         {
             if (model is null || model.UserHelper is null || model.confidentialityHelper is null)
@@ -67,7 +89,7 @@ namespace API_PAYSIM.Controllers
             UserModel newUser = new()
             {
                 IdConfidentiality = newConfidentiality.Id.ToString().ToUpper(),
-                FirstName = model.UserHelper.FirstName,
+                FirstName = model.UserHelper.FirstName!.ToUpper(),
                 LastName = model.UserHelper.LastName,
                 Address = model.UserHelper.Address,
                 Birthday = model.UserHelper.Birthday,
@@ -79,7 +101,37 @@ namespace API_PAYSIM.Controllers
             return Ok(true);
         }
 
+
+        /// <summary>
+        /// Authenticates a user and creates a JWT session
+        /// </summary>
+        /// <param name="model">
+        /// User login credentials
+        /// </param>
+        /// <returns>
+        /// Returns authenticated user information and stores JWT token in cookies
+        /// </returns>
+        /// <response code="200">
+        /// Authentication successful
+        /// </response>
+        /// <response code="400">
+        /// Invalid request
+        /// </response>
+        /// <response code="401">
+        /// Invalid email or password
+        /// </response>
+        /// <response code="404">
+        /// User profile not found
+        /// </response>
+        /// <response code="500">
+        /// Internal server error
+        /// </response>
         [HttpPost("user/signup")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> SignUp([FromBody] ConfidentialityHelper model)
         {
             if (model is null)
@@ -153,8 +205,30 @@ namespace API_PAYSIM.Controllers
             return Ok(user);
         }
 
+        /// <summary>
+        /// Returns the authenticated user profile
+        /// </summary>
+        /// <returns>
+        /// Returns the currently authenticated user information
+        /// </returns>
+        /// <response code="200">
+        /// User successfully retrieved
+        /// </response>
+        /// <response code="401">
+        /// Unauthorized access
+        /// </response>
+        /// <response code="404">
+        /// User not found
+        /// </response>
+        /// <response code="500">
+        /// Internal server error
+        /// </response>
         [Authorize]
         [HttpGet("user/me")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Me()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -185,8 +259,22 @@ namespace API_PAYSIM.Controllers
         }
 
 
+        /// <summary>
+        /// Logs out the authenticated user
+        /// </summary>
+        /// <returns>
+        /// Removes the authentication JWT cookie
+        /// </returns>
+        /// <response code="200">
+        /// Logout successful
+        /// </response>
+        /// <response code="401">
+        /// Unauthorized access
+        /// </response>
         [Authorize]
         [HttpPost("logout")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Logout()
         {
             //suppression
@@ -201,8 +289,26 @@ namespace API_PAYSIM.Controllers
             });
             return Ok(new { message = "Déconnexion réussie" });
         }
+
+        /// <summary>
+        /// Logs out a project session
+        /// </summary>
+        /// <remarks>
+        /// This endpoint is currently not functional and is reserved for future project session management.
+        /// </remarks>
+        /// <returns>
+        /// Removes the project authentication cookie
+        /// </returns>
+        /// <response code="200">
+        /// Logout request processed
+        /// </response>
+        /// <response code="401">
+        /// Unauthorized access
+        /// </response>
         [Authorize]
         [HttpPost("logout/project")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult LogoutProject()
         {
             //suppression

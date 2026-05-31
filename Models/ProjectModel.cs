@@ -7,5 +7,6 @@
         public String? ProjectName {  get; set; }
         public String? Link {  get; set; }
         public String? ApiKey {  get; set; }
+        public String? ApiKeyPrefix {  get; set; }
     }
 }
