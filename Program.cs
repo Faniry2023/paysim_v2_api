@@ -2,6 +2,7 @@ using API_PAYSIM.Data;
 using API_PAYSIM.Helpers;
 using API_PAYSIM.HubService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -17,16 +18,16 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(origin =>
+        policy
+        .AllowCredentials()
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .SetIsOriginAllowed(origin =>
         {
             using var scope = builder.Services!.BuildServiceProvider()!.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<DataContext>();
             return db.Project.Any(p => p.Link == origin);
-        })
-        .AllowCredentials()
-        .AllowAnyMethod()
-        .AllowAnyHeader()
-        .SetIsOriginAllowed(_ => true);
+        });
     });
 });
 builder.Services.AddSignalR( options =>
@@ -82,7 +83,34 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("api", limiter =>
+    {
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.PermitLimit = 30;
+        limiter.QueueLimit = 0;
+    });
+});
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new()
+    {
+        Title = "API PaySim",
+        Version = "v1",
+        Description = "Official PaySim payment and user management API"
+    });
+
+    var xmlFile =
+        $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+
+    var xmlPath =
+        Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+    options.IncludeXmlComments(xmlPath);
+});
 
 var app = builder.Build();
 
@@ -96,6 +124,8 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 

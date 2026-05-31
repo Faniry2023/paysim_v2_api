@@ -4,6 +4,7 @@ using API_PAYSIM.Helpers.PayHelper;
 using API_PAYSIM.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -145,8 +146,10 @@ namespace API_PAYSIM.Controllers
 
 
         [HttpPost("developer/info/setup")]
+        [EnableRateLimiting("api")]
         public async Task<IActionResult> DeveloperInformationSetup([FromBody]InfoPaiDevHelper model)
         {
+
             if (model is null)
             {
                 return Problem(
@@ -164,7 +167,11 @@ namespace API_PAYSIM.Controllers
                         detail: "Le contexte de données est introuvable"
                     );
             }
-            var projetct = await dataContext.Project.FirstOrDefaultAsync(p => p.ApiKey!.Equals(model.ApiKey));
+
+            var prefix = model.ApiKey!.Substring(0, 10);
+            var projects = await dataContext.Project.Where(p => p.ApiKeyPrefix == prefix).ToListAsync();
+            var projetct = projects.FirstOrDefault(p => ApiKeyHashHelper.VerifierApiKey(model.ApiKey!, p.ApiKey!));
+            //var projetct = await dataContext.Project.FirstOrDefaultAsync(p => p.ApiKey!.Equals(model.ApiKey));
             if(projetct is null)
             {
                 return Problem(

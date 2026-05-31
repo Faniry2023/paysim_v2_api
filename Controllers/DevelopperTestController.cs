@@ -1,7 +1,9 @@
-﻿using API_PAYSIM.Data;
+﻿/*using API_PAYSIM.Data;
 using API_PAYSIM.Helpers;
+using API_PAYSIM.Models;
 using API_PAYSIM.TestDeveloper;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace API_PAYSIM.Controllers
 {
@@ -14,28 +16,12 @@ namespace API_PAYSIM.Controllers
             this.dataContext = dataContext; 
             this.jwtHelper = jwtHelper;
         }
-        [HttpPost("insert/user/test")]
-        public IActionResult InitializeUser([FromBody] InitializeBdDeveloper model)
+
+        [HttpGet("insert/user/test")]
+        public async Task<IActionResult> InitializeUser()
         {
-            if (model is null || model.User is null || model.Confidentiality is null || model.Developer is null || model.Project is null)
-            {
-                return Problem(
-                        statusCode: StatusCodes.Status400BadRequest,
-                        title: "Requête invalide",
-                        detail: "La requête est invalide ou incomplète"
-                    );
-            }
 
-            if (!TestDateHelper.IsAnAdult((DateTime)model.User.Birthday!))
-            {
-                return Problem(
-                        statusCode: StatusCodes.Status400BadRequest,
-                        title: "Inscription refusée",
-                        detail: "Vous devez être majeur pour créer un compte"
-                    );
-            }
-
-            if (dataContext?.User is null || dataContext?.Confidentiality is null)
+            if (dataContext?.User is null || dataContext?.Confidentiality is null || dataContext.Project is null || dataContext.Developer is null)
             {
                 return Problem(
                         statusCode: StatusCodes.Status500InternalServerError,
@@ -43,7 +29,55 @@ namespace API_PAYSIM.Controllers
                         detail: "Le contexte de données est introuvable"
                     );
             }
-            return View();
+            ConfidentialityModel conf = new()
+            {
+                Email = "mahazotiana08@gmail.com",
+                Password = EncryptionPasswordHelper.HashPassword("Faniry,2001")
+            };
+            await dataContext.Confidentiality.AddAsync(conf);
+
+            UserModel us = new()
+            {
+                IdConfidentiality = conf.Id.ToString().ToUpper(),
+                FirstName = "rafanomezntsoa".ToUpper(),
+                LastName = "Faniry",
+                Address = "Fianarantsoa",
+                Birthday = new DateTime(2001,2,8),
+                AccountOk = true
+            };
+            await dataContext.User.AddAsync(us);
+
+            DeveloperModel dev = new()
+            {
+                IdUser = us.Id.ToString().ToUpper(),
+                Cin = "108301258027",
+                NumberAirtel = "0338431013",
+                NumberOrange = "N/A",
+                NumberYas = "0344741133"
+            };
+            await dataContext.Developer.AddAsync(dev);
+
+            var newapiKey = ApiKeyHashHelper.GenerateApiKey();
+            ProjectModel project = new()
+            {
+                IdDeveloper = dev.Id.ToString().ToUpper(),
+                ProjectName = "PaySim",
+                Link = "https://paysim-yy8x.onrender.com",
+                ApiKey = ApiKeyHashHelper.HashApiKey(newapiKey),
+            };
+            project.ApiKeyPrefix = project.ApiKey.Substring(0, 8);
+            await dataContext.Project.AddAsync(project);
+
+            await dataContext.SaveChangesAsync();
+            InitializeBdDeveloper initialAccount = new()
+            {
+                Confidentiality = conf,
+                User = us,
+                Developer = dev,
+                Project = project,
+                apiKey = newapiKey
+            };
+            return Ok(initialAccount);
         }
         [HttpGet("calcul/second")]
         public String CalculDelta(int a, int b, int c)
@@ -57,3 +91,4 @@ namespace API_PAYSIM.Controllers
         }
     }
 }
+*/

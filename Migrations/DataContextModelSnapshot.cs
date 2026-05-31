@@ -184,6 +184,9 @@ namespace API_PAYSIM.Migrations
                     b.Property<string>("ApiKey")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ApiKeyPrefix")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("IdDeveloper")
                         .HasColumnType("nvarchar(max)");
 

@@ -9,5 +9,6 @@ namespace API_PAYSIM.TestDeveloper
         public UserModel? User { get; set; }
         public DeveloperModel? Developer { get; set; }
         public ProjectModel? Project { get; set; }
+        public String? apiKey {  get; set; }
     }
 }

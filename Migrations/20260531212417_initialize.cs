@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace API_PAYSIM.Migrations
 {
     /// <inheritdoc />
-    public partial class initialmigrationonlinebd : Migration
+    public partial class initialize : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -61,6 +61,22 @@ namespace API_PAYSIM.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "HistoricalSms",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id_payement = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BuyerNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BuyerName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Reference = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HistoricalSms", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Payment",
                 columns: table => new
                 {
@@ -84,7 +100,8 @@ namespace API_PAYSIM.Migrations
                     IdDeveloper = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ProjectName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Link = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ApiKey = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    ApiKey = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ApiKeyPrefix = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -134,6 +151,9 @@ namespace API_PAYSIM.Migrations
 
             migrationBuilder.DropTable(
                 name: "Historical");
+
+            migrationBuilder.DropTable(
+                name: "HistoricalSms");
 
             migrationBuilder.DropTable(
                 name: "Payment");

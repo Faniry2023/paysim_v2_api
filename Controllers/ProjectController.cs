@@ -19,7 +19,7 @@ namespace API_PAYSIM.Controllers
             this.dataContext = dataContext;
         }
 
-
+        [Authorize]
         [HttpPost("projet/new")]
         public async Task<IActionResult> NewDeveloper([FromBody] ProjectHelper model)
         {
@@ -44,11 +44,12 @@ namespace API_PAYSIM.Controllers
 
             ProjectModel newproject = new()
             {
-                IdDeveloper = model.IdDeveloper.ToUpperInvariant(),
+                IdDeveloper = model.IdDeveloper!.ToUpperInvariant(),
                 ProjectName = model.ProjectName,
                 Link = model.Link,
-                ApiKey = model.ApiKey,
+                ApiKey = ApiKeyHashHelper.HashApiKey(model.ApiKey!),
             };
+            newproject.ApiKeyPrefix = newproject.ApiKey.Substring(0, 10);
 
             await dataContext.Project.AddAsync(newproject);
 
@@ -57,7 +58,7 @@ namespace API_PAYSIM.Controllers
             return Ok(newproject);
         }
 
-
+        [Authorize]
         [HttpGet("project/getall")]
         public async Task<IActionResult> ProjectGetAll()
         {
@@ -92,8 +93,9 @@ namespace API_PAYSIM.Controllers
             return Ok(projects);
         }
 
+        [Authorize]
         [HttpGet("project/getone/{id}")]
-        public async Task<IActionResult> ProjectGetAll(string id)
+        public async Task<IActionResult> ProjectGetOne(string id)
         {
             if (dataContext.Project is null)
             {
@@ -115,6 +117,30 @@ namespace API_PAYSIM.Controllers
             return Ok(project);
         }
 
+        [HttpGet("project/getone/byapi/{api}")]
+        public async Task<IActionResult> ProjectGetOneByApi(string api)
+        {
+            if (dataContext.Project is null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Erreur Serveur",
+                        detail: "Le contexte de données est introuvable"
+                    );
+            }
+            var project = await dataContext.Project.FirstOrDefaultAsync(p => p.Id.ToString().ToUpper().Equals(api.ToUpper()));
+            if (project == null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "projet introuvable",
+                        detail: "Un problème est survenue lors de la recherche de votre projet"
+                    );
+            }
+            return Ok(project);
+        }
+
+        [Authorize]
         [HttpPut("project/update")]
         public async Task<IActionResult> UpdateProject([FromBody] ProjectHelper model)
         {
@@ -156,11 +182,12 @@ namespace API_PAYSIM.Controllers
             await dataContext.SaveChangesAsync();
             return Ok(project);
         }
+        [Authorize]
 
         [HttpGet("generate/apikey")]
         public IActionResult GenerateApi()
         {
-            var api = GenerateApiKeyHelper.GenerateApiKey();
+            var api = ApiKeyHashHelper.GenerateApiKey();
             ApiHelper newApi = new() { Api = api };
             return Ok(newApi);
         }
