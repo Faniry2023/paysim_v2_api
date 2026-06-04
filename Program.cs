@@ -1,7 +1,8 @@
-using API_PAYSIM.Data;
+﻿using API_PAYSIM.Data;
 using API_PAYSIM.Helpers;
 using API_PAYSIM.HubService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -38,11 +39,11 @@ builder.Services.AddSignalR( options =>
 builder.Services.AddControllers();
 builder.Services.AddDbContext<DataContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DbOnline"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DbServer"));
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer(options =>
+    .AddJwtBearer("Bearer", options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -82,6 +83,7 @@ builder.Services.AddAuthentication("Bearer")
             }
         };
     });
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddRateLimiter(options =>
@@ -111,6 +113,10 @@ builder.Services.AddSwaggerGen(options =>
 
     options.IncludeXmlComments(xmlPath);
 });
+
+//à supprimer
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
 var app = builder.Build();
 

@@ -211,8 +211,15 @@ namespace API_PAYSIM.Controllers
             };
             await dataContext.Payment.AddAsync(newPay);
             await dataContext.SaveChangesAsync();
+            var tokenProject = jwtHelper.GenerateToken(newPay.IdPayment, model.Email);
+            Response.Cookies.Append("jwtApiKey", tokenProject, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddMinutes(7)
+            });
 
-            
             ValueQr valueQr = new()
             {
                 ValueKey = "id:" + newPay.IdPayment.ToString() +
