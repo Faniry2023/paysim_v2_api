@@ -6,6 +6,7 @@
         public String? IdOrder {  get; set; }
         public decimal Totalprice {  get; set; }
         public String? InfoNumber {  get; set; }
+        public String? Email {  get; set; }
 
     }
 }
