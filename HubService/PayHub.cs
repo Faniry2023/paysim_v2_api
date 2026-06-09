@@ -36,7 +36,8 @@ namespace API_PAYSIM.HubService
             if(type == "project")
             {
                 var id = Context.GetHttpContext()!.Request.Query["payId"].ToString().ToUpper();
-                if(string.IsNullOrEmpty(id) || GetUserId().ToUpper() != id.ToUpper())
+                var id_connected = GetUserId().ToUpper();
+                if (string.IsNullOrEmpty(id) || id_connected != id.ToUpper())
                 {
                     await Clients.Caller.SendAsync("Error",
                         "problème de connexion entre le site et PaySim");
