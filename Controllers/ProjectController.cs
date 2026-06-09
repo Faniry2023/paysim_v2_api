@@ -49,7 +49,7 @@ namespace API_PAYSIM.Controllers
                 Link = model.Link,
                 ApiKey = ApiKeyHashHelper.HashApiKey(model.ApiKey!),
             };
-            newproject.ApiKeyPrefix = newproject.ApiKey.Substring(0, 10);
+            newproject.ApiKeyPrefix = model.ApiKey!.Substring(0, 10);
 
             await dataContext.Project.AddAsync(newproject);
 

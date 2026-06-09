@@ -168,6 +168,22 @@ namespace API_PAYSIM.Controllers
                     );
             }
 
+            //déconnexion s'il y a deja un id connectée (user ou project
+            Response.Cookies.Delete("jwtToken", new CookieOptions
+            {
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/"
+            });
+
+            Response.Cookies.Delete("jwtTokenApi", new CookieOptions
+            {
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/"
+            });
+
+
             var prefix = model.ApiKey!.Substring(0, 10);
             var projects = await dataContext.Project.Where(p => p.ApiKeyPrefix == prefix).ToListAsync();
             var projetct = projects.FirstOrDefault(p => ApiKeyHashHelper.VerifierApiKey(model.ApiKey!, p.ApiKey!));
