@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API_PAYSIM.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20260531212417_initialize")]
-    partial class initialize
+    [Migration("20260704194738_update historical")]
+    partial class updatehistorical
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -94,8 +94,8 @@ namespace API_PAYSIM.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ActionKey")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime>("Created_at")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("IdCustomer")
                         .HasColumnType("nvarchar(max)");
@@ -106,7 +106,7 @@ namespace API_PAYSIM.Migrations
                     b.Property<string>("IdPayment")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("NumberCustomer")
+                    b.Property<string>("Name_developer")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NumberDeveloper")
@@ -132,13 +132,28 @@ namespace API_PAYSIM.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal?>("Balance_seller")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("BuyerName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("BuyerNumber")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("Created_at")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Id_developer")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Id_payement")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Id_user")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name_customer")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("Price")

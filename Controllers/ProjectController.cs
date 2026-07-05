@@ -192,5 +192,25 @@ namespace API_PAYSIM.Controllers
             return Ok(newApi);
         }
 
+        [Authorize]
+        [HttpGet("download/appmobile")]
+        public IActionResult DownloadAppMobil()
+        {
+            //var road = Path.Combine(Directory.GetCurrentDirectory(), "Downloads", "PaySim.apk");
+            var road = Path.Combine(AppContext.BaseDirectory, "wwwroot","Downloads", "PaySim.apk");
+
+            if (!System.IO.File.Exists(road))
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Application introuvable",
+                        detail: $"On n'a pas pu récuperé l'application {road}"
+                );
+            }
+            var bytes = System.IO.File.ReadAllBytes(road);
+
+            return File(bytes, "application/vnd.android.package-archive", "PaySim.apk");
+        }
+
     }
 }

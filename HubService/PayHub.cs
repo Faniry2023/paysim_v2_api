@@ -202,28 +202,54 @@ namespace API_PAYSIM.HubService
                 _logger.LogWarning($"Prix ne correspondent pas - Réf: {actionPayObjectHelper.sellerCheckHelper.Reference}");
                 LogoutProject();
             }
+            var developer = await dataContext.Developer.FirstOrDefaultAsync(d => d.Id.ToString().ToUpper().Equals(actionPayObjectHelper.sellerCheckHelper.IdDeveloper.ToUpper()));
+            if (developer == null)
+            {
+                //plus tard
+            }
+            var seller_user = await dataContext.User.FirstOrDefaultAsync(u => u.Id.ToString().ToUpper().Equals(developer.IdUser.ToUpper()));
+            if (seller_user == null)
+            {
+                //plus tard
+            }
+            string name_developer = seller_user.FirstName + " " + seller_user.LastName;
             HistoricalModel newHistorical = new()
             {
                 IdCustomer = actionPayObjectHelper.continuationPaymentHelper.IdCustomer,
                 IdPayment = actionPayObjectHelper.continuationPaymentHelper.IdPayment,
-                ActionKey = actionPayObjectHelper.continuationPaymentHelper.ActionKey,
                 IdDeveloper = actionPayObjectHelper.sellerCheckHelper.IdDeveloper!.ToUpper(),
+                Name_developer = name_developer,
                 Reference = actionPayObjectHelper.sellerCheckHelper.Reference,
                 Reason = actionPayObjectHelper.continuationPaymentHelper.Reason,
                 Price = actionPayObjectHelper.sellerCheckHelper.Price,
                 NumberDeveloper = actionPayObjectHelper.continuationPaymentHelper.Number,
-                NumberCustomer = actionPayObjectHelper.sellerCheckHelper.BuyerNumber
+                Created_at = DateTime.UtcNow
             };
 
             await dataContext.Historical.AddAsync(newHistorical);
+            var user_customer = await dataContext.User.FirstOrDefaultAsync(u => u.Id.ToString().ToUpper().Equals(actionPayObjectHelper.continuationPaymentHelper.IdCustomer));
+            if (user_customer == null)
+            {
+                //plus tard
+            }
+            string name_custom = user_customer.FirstName + " " + user_customer.LastName;
 
+            if (!decimal.TryParse(actionPayObjectHelper.sellerCheckHelper.SellerBalance, out decimal result_balance))
+            {
+                //plus tard
+            }
             HistoricalSmsModel newSms = new()
             {
+                Id_developer = actionPayObjectHelper.sellerCheckHelper.IdDeveloper,
+                Id_user = actionPayObjectHelper.continuationPaymentHelper.IdCustomer,
+                Name_customer = name_custom,
                 Id_payement = actionPayObjectHelper.continuationPaymentHelper.IdPayment!.ToUpper(),
                 BuyerNumber = actionPayObjectHelper.sellerCheckHelper.BuyerNumber,
                 BuyerName = actionPayObjectHelper.sellerCheckHelper.BuyerName,
                 Reference = actionPayObjectHelper.sellerCheckHelper.Reference,
-                Price = actionPayObjectHelper.sellerCheckHelper.Price
+                Price = actionPayObjectHelper.sellerCheckHelper.Price,
+                Balance_seller = result_balance,
+                Created_at = DateTime.UtcNow,
             };
 
             await dataContext.HistoricalSms.AddAsync(newSms);
