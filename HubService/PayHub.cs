@@ -20,12 +20,12 @@ namespace API_PAYSIM.HubService
         private static readonly Dictionary<string, string> userConnected = new();
         private static readonly Dictionary<string, string> projectConnected = new();
         private readonly ILogger<PayHub> _logger;
-        private readonly DataContext dataContext;
+        private IServiceScopeFactory _scopeFactory;
 
-        public PayHub(ILogger<PayHub> logger, DataContext dataContext)
+        public PayHub(ILogger<PayHub> logger, IServiceScopeFactory scopeFactory)
         {
             _logger = logger;
-            this.dataContext = dataContext;
+            _scopeFactory = scopeFactory;
         }
         //connexion v2
 
@@ -45,7 +45,9 @@ namespace API_PAYSIM.HubService
                     Context.Abort();
                     return;
                 }
-                var payment = await dataContext.Payment.FirstOrDefaultAsync(p => p.IdPayment.ToString().ToUpper().Equals(id));
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<DataContext>();
+                var payment = await db.Payment.FirstOrDefaultAsync(p => p.IdPayment.ToString().ToUpper().Equals(id));
                 if (payment == null)
                 {
                     await Clients.Caller.SendAsync("Error", "problème de connexion entre le site et PaySim");
@@ -65,32 +67,6 @@ namespace API_PAYSIM.HubService
             await base.OnConnectedAsync();
             
         }
-
-        //Coonexion v1
-        /*
-        public override async Task OnConnectedAsync()
-        {
-            var type = Context.GetHttpContext()?.Request.Query["type"].ToString();
-            var id = Context.GetHttpContext()!.Request.Query["projectId"].ToString().ToUpper();
-            if(type == "project")
-            {
-                var project = await dataContext.Project.FirstOrDefaultAsync(p => p.Id.ToString().ToUpper().Equals(id));
-                if(project == null)
-                {
-                    await Clients.Caller.SendAsync("Error", "problème de connexion entre le site et PaySim");
-                    return;
-                }
-                projectConnected[id] = Context.ConnectionId;
-            }
-            else
-            {
-                var userId = GetUserId().ToUpper();
-                userConnected[userId] = Context.ConnectionId;
-            }
-            // Envoyer la liste des utilisateurs connectés à tous
-            await base.OnConnectedAsync();
-            
-        }*/
         public async Task Ping()
         {
             await Clients.Caller.SendAsync("Pong");
@@ -106,11 +82,14 @@ namespace API_PAYSIM.HubService
             {
                 continuationPayments.Remove(continuationPaymentHelper);
                 sellecChecks.Remove(sellerIsExist);
-                var paiment = await dataContext.Payment.FirstOrDefaultAsync(p => p.IdPayment.ToString().ToUpper().Equals(continuationPaymentHelper.IdPayment!.ToUpper()));
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<DataContext>();
+                var paiment = await db.Payment.FirstOrDefaultAsync(p => p.IdPayment.ToString().ToUpper().Equals(continuationPaymentHelper.IdPayment!.ToUpper()));
                 if(paiment == null){
                     
                     await Clients.Caller.SendAsync("Erreur", "aucun commande n'est ne correspond avec cette raison");
                     LogoutProject();
+                    return;
                 }
 
                  ActionPayObjectHelper actionPayObjectHelper = new()
@@ -118,7 +97,7 @@ namespace API_PAYSIM.HubService
                      continuationPaymentHelper = continuationPaymentHelper,
                      sellerCheckHelper = sellerIsExist
                  };
-                 await ActionPay(actionPayObjectHelper);
+                 await ActionPay(actionPayObjectHelper, db);
                 //await Clients.Caller.SendAsync("Erreur", "Désolé, nous devrons bloquée votre compte, Votre action ne respecte pas nos condition d'utilisation");
 
             }
@@ -133,7 +112,9 @@ namespace API_PAYSIM.HubService
             var contPay = TestForContinuation(sellerCheckHelper.Reason!);
             if (contPay != null)
             {
-                var paiment = await dataContext.Payment.FirstOrDefaultAsync(p => p.IdPayment.ToString().ToUpper().Equals(contPay.IdPayment!.ToUpper()));
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<DataContext>();
+                var paiment = await db.Payment.FirstOrDefaultAsync(p => p.IdPayment.ToString().ToUpper().Equals(contPay.IdPayment!.ToUpper()));
                 if (paiment == null)
                 {
                     
@@ -152,16 +133,17 @@ namespace API_PAYSIM.HubService
                     continuationPaymentHelper = contPay,
                     sellerCheckHelper = sellerCheckHelper
                 };
-                await ActionPay(actionPayObjectHelper);
+                await ActionPay(actionPayObjectHelper, db);
+                return;
             }
             else
             {
                 sellecChecks.Add(sellerCheckHelper);
             }
         }
-        public async Task ActionPay(ActionPayObjectHelper actionPayObjectHelper)
+        public async Task ActionPay(ActionPayObjectHelper actionPayObjectHelper,DataContext db)
         {
-            if (dataContext?.Historical is null || dataContext.User is null || dataContext.Payment is null || dataContext.HistoricalSms is null)
+            if (db?.Historical is null || db.User is null || db.Payment is null || db.HistoricalSms is null)
             {
                 
                 _logger.LogError("Le contexte de données est introuvable");
@@ -173,12 +155,14 @@ namespace API_PAYSIM.HubService
                 LogoutProject();
                 return;
             }
+            
             //verify price
             if (actionPayObjectHelper == null ||actionPayObjectHelper.continuationPaymentHelper == null ||actionPayObjectHelper.sellerCheckHelper == null)
             {
                 
                 await Clients.Caller.SendAsync("Error", "un problème est survenu lors du paiment");
                 LogoutProject();
+                return;
             }
 
             if(actionPayObjectHelper!.sellerCheckHelper!.Price.SansVirgule() != actionPayObjectHelper.continuationPaymentHelper!.Price.SansVirgule())
@@ -191,26 +175,30 @@ namespace API_PAYSIM.HubService
                     
                 }
                 await Clients.Client(connectionIdCustom).SendAsync("Erreur", "Désolé, nous devrons bloquée votre compte, Votre action ne respecte pas nos condition d'utilisation");
-                var user = await dataContext.User.FirstOrDefaultAsync(u => u.Id.ToString().ToUpper() == actionPayObjectHelper.continuationPaymentHelper.IdCustomer.ToUpper());
+                var user = await db.User.FirstOrDefaultAsync(u => u.Id.ToString().ToUpper() == actionPayObjectHelper.continuationPaymentHelper.IdCustomer.ToUpper());
                 if(user == null)
                 {
                     await Clients.Client(connectionIdCustom).SendAsync("Erreur", "Une erreur est survenu lors de la bloquage du compte");
                 }
                 user.AccountOk = false;
-
-                await dataContext.SaveChangesAsync();
+                
+                await db.SaveChangesAsync();
                 _logger.LogWarning($"Prix ne correspondent pas - Réf: {actionPayObjectHelper.sellerCheckHelper.Reference}");
                 LogoutProject();
+                return;
             }
-            var developer = await dataContext.Developer.FirstOrDefaultAsync(d => d.Id.ToString().ToUpper().Equals(actionPayObjectHelper.sellerCheckHelper.IdDeveloper.ToUpper()));
+            
+            var developer = await db.Developer.FirstOrDefaultAsync(d => d.Id.ToString().ToUpper().Equals(actionPayObjectHelper.sellerCheckHelper.IdDeveloper.ToUpper()));
             if (developer == null)
             {
-                //plus tard
+                await Clients.Caller.SendAsync("Error", "Développeur introuvable");
+                return; 
             }
-            var seller_user = await dataContext.User.FirstOrDefaultAsync(u => u.Id.ToString().ToUpper().Equals(developer.IdUser.ToUpper()));
+            var seller_user = await db.User.FirstOrDefaultAsync(u => u.Id.ToString().ToUpper().Equals(developer.IdUser.ToUpper()));
             if (seller_user == null)
             {
-                //plus tard
+                await Clients.Caller.SendAsync("Error", "Utilisateur vendeur introuvable");
+                return; 
             }
             string name_developer = seller_user.FirstName + " " + seller_user.LastName;
             HistoricalModel newHistorical = new()
@@ -226,18 +214,29 @@ namespace API_PAYSIM.HubService
                 Created_at = DateTime.UtcNow
             };
 
-            await dataContext.Historical.AddAsync(newHistorical);
-            var user_customer = await dataContext.User.FirstOrDefaultAsync(u => u.Id.ToString().ToUpper().Equals(actionPayObjectHelper.continuationPaymentHelper.IdCustomer));
+            try
+            {
+                await db.Historical.AddAsync(newHistorical);
+                await db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Erreur HistoricalSms: {msg} | Inner: {inner}",
+                    ex.Message, ex.InnerException?.Message);
+                await Clients.Caller.SendAsync("Error", $"Erreur sauvegarde SMS: {ex.InnerException?.Message ?? ex.Message}");
+                return;
+            }
+            var user_customer = await db.User.FirstOrDefaultAsync(u => u.Id.ToString().ToUpper().Equals(actionPayObjectHelper.continuationPaymentHelper.IdCustomer));
             if (user_customer == null)
             {
-                //plus tard
+                await Clients.Caller.SendAsync("Error", "Utilisateur acheteur introuvable");
+                return;
             }
             string name_custom = user_customer.FirstName + " " + user_customer.LastName;
-
-            if (!decimal.TryParse(actionPayObjectHelper.sellerCheckHelper.SellerBalance, out decimal result_balance))
-            {
-                //plus tard
-            }
+            
+            decimal result_balance = actionPayObjectHelper.sellerCheckHelper.SellerBalance ?? 0;
+            // COMMENCE ICI l ERREUR
+            
             HistoricalSmsModel newSms = new()
             {
                 Id_developer = actionPayObjectHelper.sellerCheckHelper.IdDeveloper,
@@ -248,13 +247,37 @@ namespace API_PAYSIM.HubService
                 BuyerName = actionPayObjectHelper.sellerCheckHelper.BuyerName,
                 Reference = actionPayObjectHelper.sellerCheckHelper.Reference,
                 Price = actionPayObjectHelper.sellerCheckHelper.Price,
+                Reason = actionPayObjectHelper.sellerCheckHelper.Reason,
                 Balance_seller = result_balance,
                 Created_at = DateTime.UtcNow,
             };
 
-            await dataContext.HistoricalSms.AddAsync(newSms);
+            try
+            {
+                _logger.LogInformation("SMS - IdDeveloper: {v1}, IdUser: {v2}, IdPayement: {v3}, BuyerNumber: {v4}, BuyerName: {v5}, Reference: {v6}, Price: {v7}, Balance: {v8}, Reason: {v9}",
+                    actionPayObjectHelper.sellerCheckHelper.IdDeveloper,
+                    actionPayObjectHelper.continuationPaymentHelper.IdCustomer,
+                    actionPayObjectHelper.continuationPaymentHelper.IdPayment,
+                    actionPayObjectHelper.sellerCheckHelper.BuyerNumber,
+                    actionPayObjectHelper.sellerCheckHelper.BuyerName,
+                    actionPayObjectHelper.sellerCheckHelper.Reference,
+                    actionPayObjectHelper.sellerCheckHelper.Price,
+                    result_balance,
+                    actionPayObjectHelper.continuationPaymentHelper.Reason
+                );
 
-            await dataContext.SaveChangesAsync();
+                await db.HistoricalSms.AddAsync(newSms);
+                await db.SaveChangesAsync();
+
+                _logger.LogInformation("SMS sauvegardé avec succès");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERREUR SMS: {msg} | Inner: {inner} | Stack: {stack}",
+                    ex.Message, ex.InnerException?.Message, ex.StackTrace);
+                await Clients.Caller.SendAsync("Error", $"SMS Error: {ex.InnerException?.Message ?? ex.Message}");
+                return;
+            }
             // ENVOI DES BOOLÉENS TRUE À L'ENVOYEUR ET AU RECEVEUR
 
             // 1. Récupérer les ConnectionId

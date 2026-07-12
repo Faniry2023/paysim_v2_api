@@ -124,6 +124,17 @@ builder.Services.AddSwaggerGen(options =>
 
     options.IncludeXmlComments(xmlPath);
 });
+// Dans Program.cs — avant app.Run()
+//Exception non gérer
+AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+{
+    var ex = e.ExceptionObject as Exception;
+    // Log dans un fichier sur le serveur
+    File.AppendAllText(
+        Path.Combine(AppContext.BaseDirectory, "crash.log"),
+        $"{DateTime.UtcNow} | {ex?.Message} | {ex?.InnerException?.Message}\n"
+    );
+};
 
 //à supprimer
 builder.Logging.AddConsole();

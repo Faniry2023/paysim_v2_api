@@ -176,7 +176,8 @@ namespace API_PAYSIM.Controllers
             project.Link = model.Link;
             if (!model.ApiKey!.Equals("N/A"))
             {
-                project.ApiKey = model.ApiKey;
+                project.ApiKey = ApiKeyHashHelper.HashApiKey(model.ApiKey);
+                project.ApiKeyPrefix = model.ApiKey.Substring(0, 10);
             }
 
             await dataContext.SaveChangesAsync();
