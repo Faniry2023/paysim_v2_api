@@ -10,6 +10,6 @@
         public decimal Price { get; set; }
         public string? BuyerNumber {  get; set; }
         public string? BuyerName {  get; set; }
-        public string? SellerBalance {  get; set; }
+        public decimal? SellerBalance {  get; set; }
     }
 }
