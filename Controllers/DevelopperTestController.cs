@@ -1,4 +1,4 @@
-﻿/*using API_PAYSIM.Data;
+﻿using API_PAYSIM.Data;
 using API_PAYSIM.Helpers;
 using API_PAYSIM.Models;
 using API_PAYSIM.TestDeveloper;
@@ -91,4 +91,3 @@ namespace API_PAYSIM.Controllers
         }
     }
 }
-*/

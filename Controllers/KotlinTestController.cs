@@ -1,4 +1,4 @@
-﻿/*
+﻿
 using API_PAYSIM.Data;
 using API_PAYSIM.Helpers;
 using API_PAYSIM.Helpers.KotlinTestHelper;
@@ -175,4 +175,3 @@ namespace API_PAYSIM.Controllers
 
     }
 }
-*/

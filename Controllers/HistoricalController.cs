@@ -101,8 +101,8 @@ namespace API_PAYSIM.Controllers
             return Ok(historicalHelper);
         }
 
-        [HttpGet("get/historical/dev/{page}")]
-        public async Task<IActionResult> GetHistoricalDev(int page)
+        [HttpGet("get/historical/dev/{page}/{step}")]
+        public async Task<IActionResult> GetHistoricalDev(int page, int step)
         {
             if (dataContext?.User is null || dataContext?.HistoricalSms is null || dataContext?.Developer is null)
             {
@@ -123,7 +123,7 @@ namespace API_PAYSIM.Controllers
                     );
             }
 
-            var developer = await dataContext.Developer.FirstOrDefaultAsync(d => d.IdUser.ToUpper().Equals(id));
+            var developer = await dataContext.Developer.FirstOrDefaultAsync(d => d.IdUser!.ToUpper().Equals(id));
             if(developer == null)
             {
                 return Problem(
@@ -132,21 +132,86 @@ namespace API_PAYSIM.Controllers
                         detail: "Aucun profil developpeur trouvée"
                     );
             }
-            var count = await dataContext.HistoricalSms.CountAsync();
+            var count = await dataContext.HistoricalSms.Where(h => h.Id_developer!.ToUpper().Equals(developer.Id.ToString().ToUpper())).CountAsync();
             if (count == 0)
             {
                 return Ok(new HistoricalSmsHelper());
             }
             var historicalSms = await dataContext.HistoricalSms
-                .Where(h => h.Id_developer.ToUpper().Equals(developer.Id.ToString().ToUpper()))
+                .Where(h => h.Id_developer!.ToUpper().Equals(developer.Id.ToString().ToUpper()))
                 .Skip(page).Take(5).ToListAsync();
-                
-            HistoricalSmsHelper historicalSmsHelper = new() { Count = count, Page = page, HistoricalSms = historicalSms };
-            return Ok(historicalSms);
+            var balance = await dataContext.HistoricalSms.Where(h => h.Id_developer.ToUpper().Equals(developer.Id.ToString().ToUpper()))
+                .OrderByDescending(h => h.Created_at).FirstOrDefaultAsync();
+            HistoricalSmsHelper historicalSmsHelper = new() { Count = count, Page = page, HistoricalSms = historicalSms, Balance = balance!.Balance_seller };
+            return Ok(historicalSmsHelper);
         }
 
+        [HttpPost("get/historical/dev/seach")]
+        public async Task<IActionResult> GetHistoricalSearch([FromBody] HistoricalSmsSearchHelper model)
+        {
+            if (model is null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Requête invalide",
+                        detail: "La requête est invalide ou incomplète"
+                    );
+            }
+            if (dataContext?.User is null || dataContext?.HistoricalSms is null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Erreur Serveur",
+                        detail: "Le contexte de données est introuvable"
+                    );
+            }
+            var id = GetUserId();
+            if (id == null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Utilisateur introuvable",
+                        detail: "Aucun profil utilisateur associé à ce compte"
+                    );
+            }
+            var developer = await dataContext.Developer.FirstOrDefaultAsync(d => d.IdUser!.ToUpper().Equals(id));
+            if (developer == null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Developpeur introuvable",
+                        detail: "Aucun profil developpeur trouvée"
+                    );
+            }
+            var query = dataContext.HistoricalSms.Where(h => h.Id_developer!.ToUpper().Equals(developer.Id.ToString().ToUpper()));
+            if (!string.IsNullOrEmpty(model.BuyerName))
+                query = query.Where(h => h.BuyerName!.Contains(model.BuyerName));
+            if (!string.IsNullOrEmpty(model.BuyerNumber))
+                query = query.Where(h => h.BuyerNumber!.Contains(model.BuyerNumber));
 
-        
+            if (!string.IsNullOrEmpty(model.Reference))
+                query = query.Where(h => h.Reference!.Contains(model.Reference));
+
+            if (!string.IsNullOrEmpty(model.Reason))
+                query = query.Where(h => h.Reason!.Contains(model.Reason));
+
+            if (model.Price.HasValue)
+                query = query.Where(h => h.Price!.SansVirgule() == model.Price.Value.SansVirgule());
+
+            if (model.Created_at.HasValue)
+                query = query.Where(h => h.Created_at.Date == model.Created_at.Value.ToDateTime(TimeOnly.MinValue).Date);
+
+            var count = await query.CountAsync();
+            var historical = await query.Skip(model.Page * model.Step).Take(model.Step).ToListAsync();
+            HistoricalSmsHelper historicalHelper = new()
+            {
+                Count = count,
+                Page = model.Page,
+                HistoricalSms = historical,
+            };
+            return Ok(historicalHelper);
+        }
+
 
 
         private String GetUserId()

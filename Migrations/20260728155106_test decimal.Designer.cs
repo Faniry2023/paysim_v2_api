@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API_PAYSIM.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20260712083202_test")]
-    partial class test
+    [Migration("20260728155106_test decimal")]
+    partial class testdecimal
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -156,7 +156,7 @@ namespace API_PAYSIM.Migrations
                     b.Property<string>("Name_customer")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal?>("Price")
+                    b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Reason")

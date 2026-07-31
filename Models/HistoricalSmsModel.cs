@@ -10,7 +10,7 @@
         public String? BuyerNumber {  get; set; }
         public String? BuyerName { get; set; }
         public String? Reference { get; set; }
-        public decimal? Price { get; set; }
+        public decimal Price { get; set; }
         public decimal? Balance_seller {  get; set; }
         public String? Reason {  get; set; }
         public DateTime Created_at { get; set; }
