@@ -258,6 +258,105 @@ namespace API_PAYSIM.Controllers
             return Ok(user);
         }
 
+        [Authorize]
+        [HttpGet("user/conf")]
+        public async Task<IActionResult> GetConfidentiality()
+        {
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out Guid id))
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status401Unauthorized,
+                        title: "Utilisateur introuvable",
+                        detail: "Vous n'avez pas l'acces à cet compte"
+                    );
+            }
+            if (dataContext == null || dataContext?.User == null || dataContext?.Confidentiality == null)
+                return Problem(
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Erreur Serveur",
+                        detail: "Le contexte de données est introuvable"
+                    );
+
+            var user = await dataContext.User.FindAsync(id);
+            if (user == null)
+                return Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Utilisateur introuvable",
+                        detail: "Aucun profil utilisateur associé à ce compte"
+                    );
+            var confidentiality = await dataContext.Confidentiality.FirstOrDefaultAsync(c => c.Id.ToString().ToUpper().Equals(user.IdConfidentiality!.ToUpper()));
+            if (confidentiality == null)
+                return Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Confidentiality introuvable",
+                        detail: "Une erreur sur le chargement des données de confidentialité"
+                    );
+            confidentiality.Password = string.Empty;
+            return Ok(confidentiality);
+        }
+
+
+        [HttpPut("user/update")]
+        public async Task<IActionResult> UpdateUser([FromBody]UserHelper model)
+        {
+            if (model is null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Requête invalide",
+                        detail: "La requête est invalide ou incomplète"
+                    );
+            }
+            if (dataContext?.User is null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Erreur Serveur",
+                        detail: "Le contexte de données est introuvable"
+                    );
+            }
+            var user = await dataContext.User.FirstOrDefaultAsync(u => u.Id.ToString().ToUpper().Equals(model.Id!.ToUpper()));
+            if (user is null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Utilisateur introuvable",
+                        detail: "Aucun profil utilisateur associé à ce compte"
+                    );
+            }
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.Address = model.Address;
+            user.Birthday = model.Birthday;
+
+            await dataContext.SaveChangesAsync();
+
+            return Ok(user);
+        }
+        /*
+        [HttpPut("confidentiality/update")]
+        public IActionResult UpdateConfidentiality([FromBody]ConfidentialityHelper model)
+        {
+            if (model is null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Requête invalide",
+                        detail: "La requête est invalide ou incomplète"
+                    );
+            }
+            if (dataContext?.User is null)
+            {
+                return Problem(
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Erreur Serveur",
+                        detail: "Le contexte de données est introuvable"
+                    );
+            }
+        }*/
+
 
         /// <summary>
         /// Logs out the authenticated user
